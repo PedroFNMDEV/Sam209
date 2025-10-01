@@ -588,7 +588,7 @@ const ConversaoVideos: React.FC = () => {
                       Reproduzir
                     </button>
 
-                    {video.needs_conversion && !converting[video.id] && conversionStatuses[video.id]?.status !== 'concluida' && (
+                    {!converting[video.id] && (
                       <button
                         onClick={() => openConversionModal(video)}
                         className="flex-1 bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 flex items-center justify-center text-sm"
@@ -613,14 +613,12 @@ const ConversaoVideos: React.FC = () => {
                   </div>
 
                   {/* Qualidade Recomendada */}
-                  {video.needs_conversion && (
-                    <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                      <p className="text-yellow-800 text-xs">
-                        <strong>Recomendado:</strong> Qualidade {getQualityRecommendation(video)} 
-                        ({qualityPresets.find(q => q.quality === getQualityRecommendation(video))?.bitrate || 2500} kbps)
-                      </p>
-                    </div>
-                  )}
+                  <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p className="text-yellow-800 text-xs">
+                      <strong>Recomendado:</strong> Qualidade {getQualityRecommendation(video)}
+                      ({qualityPresets.find(q => q.quality === getQualityRecommendation(video))?.bitrate || 2500} kbps)
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>

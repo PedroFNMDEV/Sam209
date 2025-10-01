@@ -423,6 +423,25 @@ router.post('/start', async (req, res) => {
                 console.log(`   📹 Vídeos: ${smilResult.videos_count}`);
                 console.log(`   🔗 URL HLS: ${smilResult.playlist_url_http}`);
                 console.log(`   🔗 URL RTMP: ${smilResult.playlist_rtmp_url}`);
+
+                // Iniciar a aplicação Wowza para reproduzir o SMIL
+                try {
+                    const WowzaStreamingService = require('../config/WowzaStreamingService');
+                    const startResult = await WowzaStreamingService.startSMILStreaming(
+                        userId,
+                        userLogin,
+                        serverId,
+                        'playlists_agendamentos.smil'
+                    );
+
+                    if (startResult.success) {
+                        console.log(`✅ Streaming Wowza iniciado com sucesso`);
+                    } else {
+                        console.warn(`⚠️ Aviso ao iniciar streaming Wowza: ${startResult.error}`);
+                    }
+                } catch (wowzaError) {
+                    console.warn(`⚠️ Erro ao iniciar streaming Wowza: ${wowzaError.message}`);
+                }
             } else {
                 console.warn('⚠️ Erro ao gerar SMIL:', smilResult.error);
                 // Não falhar a transmissão se SMIL não puder ser gerado

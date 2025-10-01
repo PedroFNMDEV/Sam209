@@ -380,12 +380,13 @@ class PlaylistSMILService {
 
             const playlist = playlistRows[0];
 
-            // Buscar vídeos da playlist
+            // Buscar vídeos da playlist usando a tabela de relação playlist_videos
             const [videoRows] = await db.execute(
-                `SELECT v.nome, v.url, v.caminho, v.duracao 
-                 FROM videos v 
-                 WHERE v.playlist_id = ? AND v.codigo_cliente = ?
-                 ORDER BY v.ordem_playlist ASC, v.id ASC`,
+                `SELECT v.nome, v.url, v.caminho, v.duracao
+                 FROM playlist_videos pv
+                 INNER JOIN videos v ON pv.video_id = v.id
+                 WHERE pv.playlist_id = ? AND v.codigo_cliente = ?
+                 ORDER BY pv.ordem ASC, v.id ASC`,
                 [playlistId, userId]
             );
 

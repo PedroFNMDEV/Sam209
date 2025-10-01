@@ -765,9 +765,106 @@ class WowzaStreamingService {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    
+
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+
+  // Iniciar streaming SMIL para playlist
+  async startSMILStreaming(userId, userLogin, serverId, smilFileName) {
+    try {
+      console.log(`🎬 Iniciando streaming SMIL para ${userLogin}: ${smilFileName}`);
+
+      // Inicializar se necessário
+      if (!this.initialized) {
+        await this.initializeFromDatabase(userId);
+      }
+
+      // Verificar se aplicação do usuário existe
+      const appExists = await this.checkApplicationExists(userLogin);
+
+      if (!appExists) {
+        console.log(`📁 Aplicação ${userLogin} não existe, será necessário criá-la via Wowza`);
+        return {
+          success: false,
+          error: 'Aplicação do usuário não existe no Wowza. Entre em contato com o suporte.'
+        };
+      }
+
+      // Iniciar Stream Publisher via Wowza API
+      const streamResult = await this.startStreamPublisher(userLogin, smilFileName);
+
+      if (streamResult.success) {
+        console.log(`✅ Streaming SMIL iniciado com sucesso para ${userLogin}`);
+        return {
+          success: true,
+          message: 'Streaming iniciado com sucesso',
+          urls: {
+            hls: `https://stmv1.udicast.com:1935/${userLogin}/smil:${smilFileName}/playlist.m3u8`,
+            rtmp: `rtmp://stmv1.udicast.com:1935/${userLogin}/smil:${smilFileName}`,
+            rtsp: `rtsp://stmv1.udicast.com:554/${userLogin}/smil:${smilFileName}`
+          }
+        };
+      } else {
+        console.error(`❌ Erro ao iniciar streaming SMIL: ${streamResult.error}`);
+        return {
+          success: false,
+          error: streamResult.error || 'Erro ao iniciar streaming'
+        };
+      }
+    } catch (error) {
+      console.error('Erro ao iniciar streaming SMIL:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  // Parar streaming SMIL
+  async stopSMILStreaming(userId, userLogin, smilFileName) {
+    try {
+      console.log(`🛑 Parando streaming SMIL para ${userLogin}: ${smilFileName}`);
+
+      // Inicializar se necessário
+      if (!this.initialized) {
+        await this.initializeFromDatabase(userId);
+      }
+
+      // Parar Stream Publisher via Wowza API
+      const response = await fetch(
+        `${this.baseUrl}/v2/servers/_defaultServer_/applications/${userLogin}/streamfiles/${smilFileName}/actions/disconnect`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Basic ${Buffer.from(`${this.username}:${this.password}`).toString('base64')}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000
+        }
+      );
+
+      if (response.ok) {
+        console.log(`✅ Streaming SMIL parado com sucesso para ${userLogin}`);
+        return {
+          success: true,
+          message: 'Streaming parado com sucesso'
+        };
+      } else {
+        const errorText = await response.text();
+        console.error(`❌ Erro ao parar streaming SMIL: ${errorText}`);
+        return {
+          success: false,
+          error: errorText
+        };
+      }
+    } catch (error) {
+      console.error('Erro ao parar streaming SMIL:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
   }
 }
 
-module.exports = WowzaStreamingService;
+module.exports = new WowzaStreamingService();
